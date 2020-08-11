@@ -1,4 +1,4 @@
-# Leetcode-recording
+# Leetcode刷题记录
 leetcode 刷题思路与打卡
 
 ## 2020.5.27

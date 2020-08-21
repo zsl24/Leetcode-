@@ -867,6 +867,8 @@ def coinChange2(coins, amount):#优化版一维状态数组
         return dp[amount]    
 ~~~
 
+## 2020.8.14
+
 #### NO.746 使用最小花费爬楼梯 easy
 
 #### NO.53 最大子序和 easy
@@ -915,23 +917,163 @@ def maxSubArray2(nums):
 
 对于两棵树来说，要想相等，两个结点值首先要相等，其次两棵树的左子树相等，且右子树也相等，则根节点向左右子树要信息。
 
-base case：当左孩子都为空，返回True，当右孩子都为空，返回True
+base case：
+
+- 两个根节点皆为空，则相等
+
+- 两个根节点只有一个为空，则不相等
+- 两个根节点值不同，则不相等
 
 ~~~python
 def isSameTree(root1, root2):
-    if not root1 and not root2:#两个节点皆为空，则相等
+    if not root1 and not root2:#两个根节点皆为空，则相等
         return True
-    if not root1 or not root2:#两个节点只有一个为空，则不相等
+    if not root1 or not root2:#两个根节点只有一个为空，则不相等
         return False
-    if root1.val != root2.val:#两个节点值不同，则不相等
+    if root1.val != root2.val:#两个根节点值不同，则不相等
         return False
     #若两个节点都不为空，且节点值都相等，则比较其左右子树
-    left1, right1 = root1.left, root1.right
-    left2, right2 = root2.left, root2.right
-    return isSameTree(left1, left2) and isSameTree(right1, right2)
+    return isSameTree(root1.left, root2.left) and isSameTree(root1.right, root2.right)
+~~~
+
+#### 面试题 16.11 跳水板 easy
+
+## 2020.8.15
+
+#### NO.139 单词拆分 med
+
+利用**动态规划**解题，是存在型题目，即判断能否进行单词拆分。
+
+状态变量只有一个，即，**前i个字母**dp[i]，代表前i个字母组成的字符串能够进行单词拆分。
+
+则对于dp[i]，就要对s[:i]进行分割处理，s[:i]分成s[:j]以及s[j:i]，其中，s[:j]能否有效拆分已经计算过，为dp[j]，则只需要判断s[i:j]这段字符串是否为字典里的单词即可。
+
+为什么要将s[:i]一分为二而不是分成三份或者四份呢？
+
+因为要考虑确定某一个状态则一定要参考该状态的前面的某个状态，即dp[j]，dp[j]又代表了前j个字母能否进行单词拆分，若能，里面可能包含了多个有效单词。所以，若剩下的s[j:i]也是一个单独的有效单词，则s[:i]就能够进行单词拆分。
+
+优化方法：
+
+我们实际上在考察s[j:i]是否存在，则当s[j:i]长度非法时，即短于字典中最短的单词
+
+状态转移方程：
+
+**dp[i]=dp[j] and s[j:i] in wordDict​**
+
+~~~python
+import sys
+def wordBreak(s, wordDict):
+    n = len(s)
+    #首先计算字典中单词长度的最值
+    maxlen, minlen = 0, sys.maxsize
+    for word in wordDict:
+        maxlen, minlen = max(maxlen, len(word)), min(minlen, len(word))
+    #建立状态数组
+    dp = [False] * (n + 1)
+    dp[0] = True #主要是为了寻找s中的第一个单词用的，因为一开始分割只能是分成''和s[0:i],dp[0]必须为True，不然无法计算
+    #计算状态
+    for i in range(1, n + 1):
+        if i < minlen:#进行剪枝，因为此时不可能分割单词
+            continue
+        for j in range(max(i - maxlen, 0), i - minlen + 1):
+            #保证长度有效
+            if dp[j] and s[j:i] in wordDict:
+                dp[i] = True
+                break
+	return dp[n]
+~~~
+
+#### 2020.8.16 有序矩阵中第K小的元素 med
+
+题目中的矩阵有如下特征：
+
+- 每行元素都是升序排列
+- 每列元素都是升序排列
+
+本题可以采用二分法进行搜索，首先计算中间值mid，计数比mid小的数有几个，若数量大于k，则说明mid数值偏大，需要选择更小mid数值，若数量比k小，说明mid数值偏小，需要取更大的mid来增加小于该数的元素数量。周而复始，一直到把搜索范围缩小到一个数时，该数就是第k小的元素。
+
+二分法的思想是如此，但是如何进行计数呢？需要从第一行开始逐元素搜索吗？
+
+由于矩阵的上述特征，对于目标数mid，小于它的数总是在其左上方，则我们可以从第1列开始逐列处理，从每一列的最后一个元素开始，如果一个元素小于mid，则计数结果直接把该元素所在列的剩下元素全部都加上，若该元素小于mid，则该列的剩下元素一定小于mid。**这样就避免了多余的遍历**。
+
+~~~python
+def kthSmallest(matrix, k):
+    def count(mid):#计算不大于mid的矩阵元素数量
+        i = len(matrix)
+        j = 0#从最后一行的第一列逐列遍历
+        num = 0
+        while i >= 0 and j < len(matrix):
+            if matrix[i][j] > mid:
+                i -= 1
+            else:
+                num += i + 1
+                j += 1 
+        return num
+#循环中，访问元素的位置要不就往上走(i--)，要不往右走(j++)
+#正好能访问整个将矩阵分界的边界，左上为不大于目标数，右下为大于目标数
+	left, right = matrix[0][0], maxtrix[-1][-1]
+    while left < right:
+        mid = (left + right) // 2
+        num = count(mid)
+        if num >= k:
+            right = mid
+        else:
+            left = mid + 1
+    return left    
+~~~
+
+#### NO.692 前k个高频单词 med 
+
+**排序法**
+
+先利用哈希表来计数，然后以(单词数量, 单词)方式将计数结果存入列表，然后再进行排序。
+
+实际上除了排序，前面的步骤都比较简单，就不提了。
+
+这里排序实际上涉及到一个问题，计数一样的单词，按照字典序来排序，从首字母开始比较字母大小，较小者排前面，首字母若一样，则继续往下比，一方下面没有字母，另一方有，则没字母的排前面。
+
+对于(单词数量，单词)这个数组，单词数量是升序排序，二单词这一维是降序排序。所以单词数量这一栏取-，整个列表进行降序排序，单词数量由于负号相当于进行升序排序，然后再据此输出结果即可。
+
+~~~python
+def topKFrequent(self, words, k):
+    """
+    :type words: List[str]
+    :type k: int
+    :rtype: List[str]
+    """
+    wordmap = {}
+    wordlist = []
+    res = []
+    for word in words:
+        if word in wordmap:
+            wordmap[word] += 1
+        else:
+            wordmap[word] = 1
+    for word, number in wordmap.items():
+        wordlist.append((-number, word))
+    wordlist.sort()
+    res = [wordlist[i][1] for i in range(k)]
+        
+    return res
 ~~~
 
 
+
+## 2020.8.17 
+
+#### NO.557 反转字符串中的单词 III easy
+
+## 2020.8.18
+
+#### NO.709 转换成小写字母 easy
+
+#### NO.350 两个数组的交集II easy
+
+#### NO.233 矩形面积 med
+
+#### NO.326 3的幂 easy
+
+#### NO.231 2的幂 easy
 
 
 
